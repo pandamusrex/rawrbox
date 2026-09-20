@@ -1,5 +1,9 @@
 #include <MIDI.h>
 
+#include <SPI.h>
+#include <Wire.h>
+#include <ILI9341_t3.h>
+
 #include "track.h"
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -20,6 +24,29 @@ int note_3 = 0;
 
 void setup() {
   Serial.begin(9600);
+
+  // SparkFun SKU COM-28380
+  // https://www.sparkfun.com/color-320x240-touchscreen-3-2-inch-ili9341-controller.html
+  // TFT VCC   5V
+  // TFT GND   GND
+  // TFT CS    10
+  // TFT RESET 8
+  // TFT DC    9
+  // TFT MOSI  11
+  // TFT SCK   13
+  // TFT MISO  12
+  #define TFT_RST  8
+  #define TFT_DC  9
+  #define TFT_CS 10
+  ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST);
+
+  tft.begin();
+  tft.fillScreen(ILI9341_BLACK);
+  tft.fillRect(20, 20, 40, 30, ILI9341_RED);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(40, 40);
+  tft.println("C4");
 
   MIDI.begin();
   pinMode(LED_BUILTIN, OUTPUT); 
