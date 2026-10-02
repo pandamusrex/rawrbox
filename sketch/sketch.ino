@@ -41,6 +41,7 @@ void setup() {
   ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST);
 
   tft.begin();
+  tft.setRotation(2);
   tft.fillScreen(ILI9341_BLACK);
   tft.fillRect(20, 20, 40, 30, ILI9341_RED);
   tft.setTextColor(ILI9341_WHITE);
