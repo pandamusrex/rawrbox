@@ -1,15 +1,32 @@
+// RAWRBOX
+// PANDAMUSREX
+// 2026
+
 #include <MIDI.h>
+#include "track.h"
 
 #include <SPI.h>
 #include <Wire.h>
 #include <ILI9341_t3.h>
+#include <XPT2046_Touchscreen.h>
 
-#include "track.h"
+// Touch input
+#define CS_PIN  8
+#define TIRQ_PIN  2
+// MOSI=11, MISO=12, SCK=13
+XPT2046_Touchscreen ts(CS_PIN, TIRQ_PIN);
 
+// Screen
+#define TFT_RST  6
+#define TFT_DC  9
+#define TFT_CS 10
+// MOSI=11, MISO=12, SCK=13
+ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST);
+
+// MIDI
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
 
-const int channel = 1;
-
+// Sequencer
 Track *pDrums = 0;
 Track *pBassLine = 0;
 Track *pArpeggio = 0;
@@ -23,35 +40,44 @@ int previousNote_3 = 0;
 int note_3 = 0;
 
 void setup() {
+  // Debugging
   Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT); 
 
-  // SparkFun SKU COM-28380
-  // https://www.sparkfun.com/color-320x240-touchscreen-3-2-inch-ili9341-controller.html
-  // TFT VCC   5V
-  // TFT GND   GND
-  // TFT CS    10
-  // TFT RESET 8
-  // TFT DC    9
-  // TFT MOSI  11
-  // TFT SCK   13
-  // TFT MISO  12
-  #define TFT_RST  8
-  #define TFT_DC  9
-  #define TFT_CS 10
-  ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST);
-
+  // Screen
   tft.begin();
   tft.setRotation(2);
   tft.fillScreen(ILI9341_BLACK);
-  tft.fillRect(20, 20, 40, 30, ILI9341_RED);
+
+  // tft.fillRect(20, 20, 40, 30, ILI9341_RED);
   tft.setTextColor(ILI9341_WHITE);
   tft.setTextSize(2);
-  tft.setCursor(40, 40);
-  tft.println("C4");
+  
+  tft.setCursor(10, 10);
+  tft.println("1: Drums/Rample 1");
+  tft.drawRect(10, 45, 40, 40, ILI9341_WHITE);
+  tft.drawRect(70, 45, 40, 40, ILI9341_WHITE);
+  tft.drawRect(130, 45, 40, 40, ILI9341_GREEN);
+  tft.drawRect(190, 45, 40, 40, ILI9341_WHITE);
+  tft.setCursor(10, 90);
+  tft.println("2: Bass Synth/Pro-1");
+  // tft.fillRect(20, 20, 40, 30, ILI9341_RED);
+  tft.setCursor(10, 170);
+  tft.println("3: Arp/Rample 2");
+  // tft.fillRect(20, 20, 40, 30, ILI9341_RED);
+  tft.setCursor(10, 250);
+  tft.println("4: Plaits");
+  // tft.fillRect(20, 20, 40, 30, ILI9341_RED);
 
+  // Touch
+  ts.begin();
+  ts.setRotation(2);
+  while (!Serial && (millis() <= 1000));
+
+  // MIDI
   MIDI.begin();
-  pinMode(LED_BUILTIN, OUTPUT); 
 
+  // Sequencer
   pDrums = new Track();
   pDrums->addClip("c1 @ @ ~  c1 @ @ ~  c1 @ @ ~  c1 @ @ ~ ");
 
@@ -75,7 +101,6 @@ void setup() {
 }
 
 void loop() {
-
   note_1 = pDrums->getNote();
   if (previousNote_1 != 0) {
     MIDI.sendNoteOff(previousNote_1, 100, 1);
@@ -109,6 +134,8 @@ void loop() {
 
   ///////////////
 
+  // Flash the built in LED on the 1st beat
+
   if (subBeat % 4 == 0) {
     digitalWrite(LED_BUILTIN, HIGH);
   } else {
@@ -119,5 +146,20 @@ void loop() {
   if (subBeat > 15) {
     subBeat = 0;
   }
+
+  // Handle touches
+    if (ts.touched()) {
+      TS_Point p = ts.getPoint();
+      Serial.print("Pressure = ");
+      Serial.print(p.z);
+      Serial.print(", x = ");
+      Serial.print(p.x);
+      Serial.print(", y = ");
+      Serial.print(p.y);
+      delay(30);
+      Serial.println();
+  }
+
+  // TODO better tempo management
   delay(100);
 }
