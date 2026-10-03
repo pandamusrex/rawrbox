@@ -4,18 +4,39 @@
 #include <iostream>
 #include <vector>
 
+#include <MIDI.h>
+
+#include "loop.h"
+
 class Track{
   public:
-    Track();
+    Track(MIDI &midi);
     ~Track();
 
-    void addClip(const char *str);
-    char getNote();
+    void setMIDIChannel(unsigned int midiChannel);
+
+    bool isMuted();
+    void mute();
+    void unmute();
+
+    void addLoop(const char *groupName, const char *name, const char *notes);
+    void playNextSixteenth();
+
+    unsigned char getNumLoops();
+    void queuePrevLoop();
+    void queueNextLoop();
 
   private:
-    int getMIDINote(const char *note);
-    unsigned int m_playbackHead;
-    std::vector<char> *m_pNotes;
+    MIDI &m_midi;
+    unsigned char m_activeLoopNum;
+    unsigned char m_midiChannel;
+    bool m_bIsMuted;
+
+    unsigned char m_nextLoopNum;
+
+    unsigned char m_previousMidiNote;
+
+    std::vector<Loop> *m_pLoops;
 };
 
 #endif

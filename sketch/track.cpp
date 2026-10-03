@@ -1,92 +1,95 @@
 #include "track.h"
+#include "loop.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-Track::Track() : m_playbackHead(0) {
-  m_pNotes = new std::vector<char>;
+Track::Track(MIDI &midi) : m_midi(midi), m_midiChannel(0),
+  m_bIsMuted(false), m_activeLoopNum(0), m_previousMidiNote(0), m_nextLoopNum(0) {
+  m_pLoops = new std::vector<Loop>;
 }
 
 Track::~Track() {
-  delete m_pNotes;
+  delete m_pLoops;
 }
 
-void Track::addClip(const char *str) {
-  char workingCopy[1024];
-  strcpy(workingCopy, str);
+void Track::setMIDIChannel(unsigned int midiChannel) {
+  m_midiChannel = midiChannel;
+}
 
-  char *token = strtok(workingCopy, " ");
-  while (token != NULL) {
-    int note = this->getMIDINote(token);
-    if (note == -1) {
-      m_pNotes->push_back(0);
-    } else {
-      m_pNotes->push_back((char) note);
+bool Track::isMuted() {
+  return m_bIsMuted;
+}
+
+void Track::mute() {
+  m_bIsMuted = true;
+}
+
+void Track::unmute() {
+  m_bIsMuted = false;
+}
+
+unsigned char Track::getNumLoops() {
+  return m_pLoops->size();
+}
+
+void Track::addLoop(const char *groupName, const char *name, const char *notes) {
+  Loop loop;
+
+  loop.setGroupName(groupName);
+  loop.setName(name);
+  loop.addNotesFromString(notes);
+
+  m_pLoops->push_back(loop);
+}
+
+void Track::playNextSixteenth() {
+  if (m_pLoops->empty()) {
+    return;
+  }
+
+  if (m_previousMidiNote != 0) {
+    m_midi.sendNoteOff(m_previousMidiNote, 100, m_midiChannel);
+  }
+
+  char nextMidiNote = m_pLoops[m_activeLoopNum].getNextSixteenth();
+  m_previousMidiNote = nextMidiNote;
+
+  if (!m_bIsMuted) {
+    if (nextMidiNote != 0) {
+      MIDI.sendNoteOn(nextMidiNote, 100, m_midiChannel);
     }
-    token = strtok(NULL, " ");
+  }
+
+  if (m_nextLoopNum != m_activeLoopNum) {
+    if (m_pLoops[m_activeLoopNum].isAtBeginningOfLoop()) {
+      m_activeLoopNum = m_nextLoopNum;
+    }
   }
 }
 
-char Track::getNote() {
-  if (m_pNotes->empty()) {
-    return 72; // C4
+void Track::queuePrevLoop() {
+  if (m_pLoops->size() <= 1) {
+    return;
   }
 
-  char note = m_pNotes->at(m_playbackHead);
-  m_playbackHead++;
-  if (m_playbackHead > m_pNotes->size() - 1) {
-    m_playbackHead = 0;
+  m_nextLoopNum = m_activeLoopNum;
+  if (m_nextLoopNum == 0) {
+    m_nextLoopNum = m_pLoops->size() - 1;
+  } else {
+    m_nextLoopNum--;
   }
-  return note;
 }
 
-int Track::getMIDINote(const char *note) {
-  if (!note || strlen(note) < 2 || strlen(note) > 4) {
-      return -1; // Invalid length
+void Track::queueNextLoop() {
+  if (m_pLoops->size() <= 1) {
+    return;
   }
 
-  // Map note letters to semitone offsets from C
-  int semitoneMap[7] = {9, 11, 0, 2, 4, 5, 7}; // A B C D E F G
-
-  char letter = toupper(note[0]);
-  if (letter < 'A' || letter > 'G') {
-      return -1; // Invalid note letter
+  m_nextLoopNum = m_activeLoopNum;
+  m_nextLoopNum++;
+  if (m_nextLoopNum > m_pLoops->size() - 1) {
+    m_nextLoopNum = 0;
   }
-
-  int semitone = semitoneMap[letter - 'A'];
-
-  int idx = 1;
-  // Handle optional sharp (#) or flat (b)
-  if (note[idx] == '#' || note[idx] == 'b' || note[idx] == 'B') {
-      if (note[idx] == '#') semitone += 1;
-      else semitone -= 1;
-      idx++;
-  }
-
-  // Parse octave number
-  int octave = 0;
-  int sign = 1;
-  if (note[idx] == '-') { // Negative octave
-      sign = -1;
-      idx++;
-  }
-  if (!isdigit(note[idx])) {
-      return -1; // Missing octave digit
-  }
-  while (isdigit(note[idx])) {
-      octave = octave * 10 + (note[idx] - '0');
-      idx++;
-  }
-  octave *= sign;
-
-  // MIDI note number formula: C0 = 24, so:
-  int midiNumber = (octave + 2) * 12 + semitone;
-
-  // Validate range
-  if (midiNumber < 0 || midiNumber > 127) {
-      return -1;
-  }
-
-  return midiNumber;
 }
