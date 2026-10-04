@@ -1,9 +1,15 @@
-// RAWRBOX
-// PANDAMUSREX
-// 2026
+/*
+ ____                 _                           ____           
+|  _ \ __ _ _ __   __| | __ _ _ __ ___  _   _ ___|  _ \ _____  __
+| |_) / _` | '_ \ / _` |/ _` | '_ ` _ \| | | / __| |_) / _ \ \/ /
+|  __/ (_| | | | | (_| | (_| | | | | | | |_| \__ \  _ <  __/>  < 
+|_|   \__,_|_| |_|\__,_|\__,_|_| |_| |_|\__,_|___/_| \_\___/_/\_\
 
-#include <MIDI.h>
-#include "track.h"
+RAWRBOX
+2026
+*/
+
+#include "sequencer.h"
 
 #include <SPI.h>
 #include <Wire.h>
@@ -23,22 +29,19 @@ XPT2046_Touchscreen ts(CS_PIN, TIRQ_PIN);
 // MOSI=11, MISO=12, SCK=13
 ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST);
 
-// MIDI
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
-
 // Sequencer
-Sequencer seq = Sequencer(MIDI);
-#define DRUM_TRACK 0
-#define BASS_SYNTH_TRACK 1
-#define ARP_TRACK 2
-#define PLAITS_TRACK 3
+Sequencer seq = Sequencer();
+#define DRUM_TRACK_0 0
+#define BASS_SYNTH_TRACK_1 1
+#define ARP_TRACK_2 2
+#define PLAITS_TRACK_3 3
 
 // UI
 unsigned int subBeat = 0;
 bool inTouch = false;
 
 void setup() {
-  // Debugging
+  // Debugging using VCP and built-in LED
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT); 
 
@@ -55,59 +58,57 @@ void setup() {
 
   tft.drawRect(5, 5, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 10);
-  tft.println("1: Drums/Rample 1"); // TODO READ FROM TRACK
+  tft.println("1: 1"); // TODO READ FROM TRACK
   tft.drawRect(180, 5, 50, 70, ILI9341_WHITE);
 
   tft.drawRect(5, 85, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 90);
-  tft.println("2: Bass Synth/Pro-1"); // TODO READ FROM TRACK
+  tft.println("2: 2"); // TODO READ FROM TRACK
   tft.drawRect(180, 85, 50, 70, ILI9341_WHITE);
 
   tft.drawRect(180, 165, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 170);
-  tft.println("3: Arp/Rample 2"); // TODO READ FROM TRACK
+  tft.println("3: 3"); // TODO READ FROM TRACK
   tft.drawRect(180, 165, 50, 70, ILI9341_WHITE);
 
   tft.drawRect(180, 245, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 250);
-  tft.println("4: Plaits"); // TODO READ FROM TRACK
+  tft.println("4: 4"); // TODO READ FROM TRACK
   tft.drawRect(180, 245, 50, 70, ILI9341_WHITE);
 
   // Touch
   ts.begin();
   ts.setRotation(2);
-  while (!Serial && (millis() <= 1000));
-
-  // MIDI
-  MIDI.begin();
+  while (!Serial && (millis() <= 1000)); // Wait for USB VCP to come on line
+  // TODO will this be a problem when there is no host?
 
   // C0:24, C1:36, C2:48, C3:60, C4:72
-  seq.setMIDIChannelForTrack(DRUM_TRACK, 1);
-  seq.setMIDIChannelForTrack(1, 2);
-  seq.setMIDIChannelForTrack(2, 3);
-  seq.setMIDIChannelForTrack(3, 4);
+  seq.setMIDIChannelForTrack(DRUM_TRACK_0, 1);
+  seq.setMIDIChannelForTrack(BASS_SYNTH_TRACK_1, 2);
+  seq.setMIDIChannelForTrack(ARP_TRACK_2, 3);
+  seq.setMIDIChannelForTrack(PLAITS_TRACK_3, 4);
 
   // Sequencer
-  sequencer.addLoopToTrack(DRUM_TRACK,
+  seq.addLoopToTrack(DRUM_TRACK_0,
     "Knight Rider",
     "4 on the Floor",
     "c1 @ @ ~  c1 @ @ ~  c1 @ @ ~  c1 @ @ ~"
   );
 
-  sequencer.addLoopToTrack(DRUM_TRACK,
+  seq.addLoopToTrack(DRUM_TRACK_0,
     "Blue Monday",
     "Drums",
     "c1 @ @ ~  c1 @ @ ~  c1 c1 c1 c1  c1 c1 c1 c1 "
     "c1 @ @ ~  c1 @ @ ~  c1 @ @ ~     c1 @ @ ~"
   );
 
-  sequencer.addLoopToTrack(DRUM_TRACK,
+  seq.addLoopToTrack(DRUM_TRACK_0,
     "Sweet Dreams",
     "4 on the Floor",
     "c1 @ @ ~  c1 @ @ ~  c1 @ @ ~  c1 @ @ ~"
   );
 
-  sequencer.addLoopToTrack(BASS_SYNTH_TRACK,
+  seq.addLoopToTrack(BASS_SYNTH_TRACK_1,
     "Knight Rider",
     "Bass Line",
     "f#1 f#1 ~ ~  f#1 f#1 ~ ~  f#1 f#1 ~ ~  ~ ~ ~ ~ "
@@ -120,23 +121,23 @@ void setup() {
     "g1 g1 ~ ~    g1 g1 ~ ~    g1 g1 ~ ~    ~ ~ ~ ~"
   );
 
-  sequencer.addLoopToTrack(BASS_SYNTH_TRACK,
+  seq.addLoopToTrack(BASS_SYNTH_TRACK_1,
     "Blue Monday",
     "Bass",
     "f1 @ f2 @  f1 @ f2 @  c1 @ c2 @  c1 @ c2 @ "
     "d1 @ d2 @  d1 @ d2 @  d1 @ d2 @  d1 @ d2 @ "
     "g1 @ g2 @  g1 @ g2 @  c1 @ c2 @  c1 @ c2 @ "
     "d1 @ d2 @  d1 @ d2 @  d1 @ d2 @  d1 @ d2 @"
-  )
+  );
 
-  sequencer.addLoopToTrack(BASS_SYNTH_TRACK,
+  seq.addLoopToTrack(BASS_SYNTH_TRACK_1,
     "Sweet Dreams",
     "Bass",
     "c1 @ c1 @  ~ ~ ~ ~  ~ ~ ~ ~  ~ ~ ~ ~ "
     "~ ~ ~ ~    ~ ~ ~ ~  ~ ~ ~ ~  ~ ~ ~ ~ "
-  )
+  );
 
-  sequencer.addLoop(ARP_TRACK,
+  seq.addLoopToTrack(ARP_TRACK_2,
     "Knight Rider",
     "Arp",
     "c#4 @ d4 c#4  c#4 d4 c#4 c#4  d4 c#4 c#4 c#4  c4 c#4 c#4 c#4 "
@@ -145,30 +146,34 @@ void setup() {
     "b3 @ c4 b3    b3 c4 b3 b3     c4 b3 b3 b3     a#3 b3 b3 b3"
   );
 
-  sequencer.addLoop(ARP_TRACK, "Blue Monday", "Mid Motif",
+  seq.addLoopToTrack(ARP_TRACK_2,
+    "Blue Monday",
+    "Mid Motif",
     "f3 @ f3 @  f3 @ g3 @  c3 @ c3 @  c3 @ d3 @ "
     "d3 @ @ @   d3 @ d3 @  @ @ d3 @   d3 @ @ @ "
     "f3 @ f3 @  f3 @ g3 @  c3 @ c3 @  c3 @ d3 @ "
     "d3 @ @ @   d3 @ d3 @  @ @ d3 @   d3 @ @ @"
   );
 
-  sequencer.addLoop(ARP_TRACK, "Sweet Dreams", "Mid Motif",
+  seq.addLoopToTrack(ARP_TRACK_2,
+    "Sweet Dreams",
+    "Mid Motif",
     "c2 @ c2 @    c3 @ c4 @   eb3 @ eb4 @  c3 @ c4 @ "
     "ab3 @ ab3 @  ab4 @ c4 @  g2 @ g2 @    g3 @ c4 @"
   );
 }
 
 void loop() {
-  sequencer.playNextSixteenth();
+  seq.playNextSixteenth();
 
   ///////////////
-  // Flash the built in LED on the 1st beat
+  // Flash the built in LED on the beats
 
   if (subBeat % 4 == 0) {
     digitalWrite(LED_BUILTIN, HIGH);
   } else {
     digitalWrite(LED_BUILTIN, LOW);
-  }
+ }
 
   subBeat++;
   if (subBeat > 15) {
@@ -183,7 +188,6 @@ void loop() {
       TS_Point p = ts.getPoint();
       if (p.z > 1500) {
         unsigned char track;
-        unsigned char position;
 
         track = p.y / 800;
         if (track > 3) {
@@ -191,26 +195,18 @@ void loop() {
         } // TODO TRACK_COUNT
 
         if (p.x < 1000) { // LEFT OF TRACK == QUEUE PREVIOUS LOOP
-          seq.queuePrevLoopForTrack(trackNum);
+          seq.queuePrevLoopForTrack(track);
         } else if (p.x > 2000) { // RIGHT OF TRACK == QUEUE NEXT LOOP
-          seq.queueNextLoopForTrack(trackNum);
+          seq.queueNextLoopForTrack(track);
         } else { // CENTER OF TRACK == TOGGLE MUTE
-          seq.toggleMuteForTrack(trackNum);
+          seq.toggleMuteForTrack(track);
         }
       }
-      //Serial.print("Pressure = ");
-      //Serial.print(p.z);
-      //Serial.print(", x = ");
-      //Serial.print(p.x);
-      //Serial.print(", y = ");
-      //Serial.print(p.y);
-      //delay(30);
-      //Serial.println();
     }
   } else {
     inTouch = false;
   }
 
   // TODO tempo management
-  delay(100);
+  delay(110);
 }

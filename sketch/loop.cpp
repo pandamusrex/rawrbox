@@ -1,7 +1,9 @@
 #include "loop.h"
 #include "utils.h"
 
-Loop::Loop() : m_pMIDINotes(0), m_playbackHead(0) {
+#include <string.h>
+
+Loop::Loop() : m_playbackHead(0) {
   m_pMIDINotes = new std::vector<char>;
   strcpy(m_groupName, "");
   strcpy(m_name, "");
@@ -20,7 +22,7 @@ void Loop::setName(const char *name) {
 }
 
 void Loop::addNotesFromString(const char *notes) {
-  char workingCopy[MAX_LOOP_NOTES_STRING];
+  char workingCopy[MAX_LOOP_NOTES_STRING + 1];
   strncpy(workingCopy, notes, MAX_LOOP_NOTES_STRING);
 
   char *token = strtok(workingCopy, " ");
@@ -36,6 +38,10 @@ void Loop::addNotesFromString(const char *notes) {
 }
 
 char Loop::getNextSixteenth() {
+  if (m_pMIDINotes->empty()) {
+    return 0;
+  }
+
   char midiNote = m_pMIDINotes->at(m_playbackHead);
   m_playbackHead++;
   if (m_playbackHead >= m_pMIDINotes->size()) {

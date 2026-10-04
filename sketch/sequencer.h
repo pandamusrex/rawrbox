@@ -1,12 +1,12 @@
 #ifndef SEQUENCER_H
 #define SEQUENCER_H
 
-#include <MIDI.h>
 #include "track.h"
+#include "shareablemidi.h"
 
 class Sequencer{
   public:
-    Sequencer(MIDI &midi);
+    Sequencer();
     ~Sequencer();
 
     unsigned char getNumTracks();
@@ -46,11 +46,8 @@ class Sequencer{
     void playNextSixteenth();
 
   private:
-    MIDI &m_midi;
+    ShareableMIDI *m_pMIDI;
     Track *m_pTracks;
-    // int getMIDINote(const char *note);
-    // unsigned int m_playbackHead;
-    // std::vector<char> *m_pNotes;
 };
 
 #endif

@@ -2,12 +2,22 @@
 
 #define TRACK_COUNT 4
 
-Sequencer::Sequencer(MIDI &midi) : m_pTracks(0), m_midi(midi) {
-  m_pTracks = new Track[TRACK_COUNT](midi);
+Sequencer::Sequencer() : m_pTracks(0) {
+  m_pMIDI = new ShareableMIDI();
+  m_pMIDI->start_midi();
+
+  m_pTracks = new Track[TRACK_COUNT]();
+  for (int i=0; i < TRACK_COUNT; i++) {
+    m_pTracks[i].setMIDI(m_pMIDI);
+  }
 }
 
 Sequencer::~Sequencer() {
+  for (int i=0; i < TRACK_COUNT; i++) {
+    m_pTracks[i].setMIDI(0);
+  }
   delete[] m_pTracks;
+  delete m_pMIDI;
 }
 
 unsigned char Sequencer::getNumTracks() {
@@ -24,7 +34,7 @@ void Sequencer::setMIDIChannelForTrack(unsigned char trackNum, unsigned char mid
 
 bool Sequencer::isTrackMuted(unsigned char trackNum) {
   if (trackNum >= TRACK_COUNT) {
-    return;
+    return false;
   }
 
   return m_pTracks[trackNum].isMuted();
@@ -89,7 +99,7 @@ void Sequencer::queuePrevLoopForTrack(unsigned char trackNum) {
     return;
   }
 
-  m_pTracks[trackNum]->queuePrevLoop();
+  m_pTracks[trackNum].queuePrevLoop();
 }
 
 void Sequencer::queueNextLoopForTrack(unsigned char trackNum) {
@@ -97,5 +107,5 @@ void Sequencer::queueNextLoopForTrack(unsigned char trackNum) {
     return;
   }
 
-  m_pTracks[trackNum]->queueNextLoop();
+  m_pTracks[trackNum].queueNextLoop();
 }

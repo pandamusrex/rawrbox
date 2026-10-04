@@ -5,13 +5,25 @@
 #include <string.h>
 #include <ctype.h>
 
-Track::Track(MIDI &midi) : m_midi(midi), m_midiChannel(0),
-  m_bIsMuted(false), m_activeLoopNum(0), m_previousMidiNote(0), m_nextLoopNum(0) {
+#define MAX_LOOPS_PER_TRACK 10
+
+Track::Track()  {
+  m_pMIDI = 0;
+  m_midiChannel = 0;
+  m_bIsMuted = false;
+  m_activeLoopNum = 0;
+  m_previousMidiNote = 0;
+  m_nextLoopNum = 0;
   m_pLoops = new std::vector<Loop>;
+  m_pLoops->reserve(MAX_LOOPS_PER_TRACK);
 }
 
 Track::~Track() {
   delete m_pLoops;
+}
+
+void Track::setMIDI(ShareableMIDI *midi) {
+  m_pMIDI = midi;
 }
 
 void Track::setMIDIChannel(unsigned int midiChannel) {
@@ -35,8 +47,12 @@ unsigned char Track::getNumLoops() {
 }
 
 void Track::addLoop(const char *groupName, const char *name, const char *notes) {
-  Loop loop;
+  if (m_pLoops->size() == MAX_LOOPS_PER_TRACK) {
+    return;
+  }
 
+  Loop loop;
+  
   loop.setGroupName(groupName);
   loop.setName(name);
   loop.addNotesFromString(notes);
@@ -45,25 +61,30 @@ void Track::addLoop(const char *groupName, const char *name, const char *notes) 
 }
 
 void Track::playNextSixteenth() {
+  if (! m_pMIDI) {
+    return;
+  }
+
   if (m_pLoops->empty()) {
     return;
   }
 
   if (m_previousMidiNote != 0) {
-    m_midi.sendNoteOff(m_previousMidiNote, 100, m_midiChannel);
+    m_pMIDI->sendNoteOff(m_previousMidiNote, 100, m_midiChannel);
   }
 
-  char nextMidiNote = m_pLoops[m_activeLoopNum].getNextSixteenth();
+ // Serial.println(0+m_midiChannel);
+  char nextMidiNote = m_pLoops->at(m_activeLoopNum).getNextSixteenth();
   m_previousMidiNote = nextMidiNote;
 
   if (!m_bIsMuted) {
     if (nextMidiNote != 0) {
-      MIDI.sendNoteOn(nextMidiNote, 100, m_midiChannel);
+      m_pMIDI->sendNoteOn(nextMidiNote, 100, m_midiChannel);
     }
   }
 
   if (m_nextLoopNum != m_activeLoopNum) {
-    if (m_pLoops[m_activeLoopNum].isAtBeginningOfLoop()) {
+    if (m_pLoops->at(m_activeLoopNum).isAtBeginningOfLoop()) {
       m_activeLoopNum = m_nextLoopNum;
     }
   }

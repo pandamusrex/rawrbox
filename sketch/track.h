@@ -4,15 +4,16 @@
 #include <iostream>
 #include <vector>
 
-#include <MIDI.h>
+#include "shareablemidi.h"
 
 #include "loop.h"
 
 class Track{
   public:
-    Track(MIDI &midi);
+    Track();
     ~Track();
 
+    void setMIDI(ShareableMIDI *midi);
     void setMIDIChannel(unsigned int midiChannel);
 
     bool isMuted();
@@ -27,7 +28,7 @@ class Track{
     void queueNextLoop();
 
   private:
-    MIDI &m_midi;
+    ShareableMIDI *m_pMIDI;
     unsigned char m_activeLoopNum;
     unsigned char m_midiChannel;
     bool m_bIsMuted;
