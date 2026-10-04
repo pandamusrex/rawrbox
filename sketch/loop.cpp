@@ -27,8 +27,8 @@ void Loop::addNotesFromString(const char *notes) {
 
   char *token = strtok(workingCopy, " ");
   while (token != NULL) {
-    int note = getMIDINote(token);
-    if (note == -1) {
+    unsigned char note = getMIDINote(token);
+    if (note > 127) {
       m_pMIDINotes->push_back(0); // TODO Handle legato @ and rest ~ differently
     } else {
       m_pMIDINotes->push_back((char) note);

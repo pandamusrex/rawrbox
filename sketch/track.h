@@ -34,7 +34,6 @@ class Track{
     bool m_bIsMuted;
 
     unsigned char m_nextLoopNum;
-
     unsigned char m_previousMidiNote;
 
     std::vector<Loop> *m_pLoops;

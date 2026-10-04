@@ -73,12 +73,12 @@ void Track::playNextSixteenth() {
     m_pMIDI->sendNoteOff(m_previousMidiNote, 100, m_midiChannel);
   }
 
- // Serial.println(0+m_midiChannel);
-  char nextMidiNote = m_pLoops->at(m_activeLoopNum).getNextSixteenth();
+  // Serial.println(0+m_midiChannel);
+  unsigned char nextMidiNote = m_pLoops->at(m_activeLoopNum).getNextSixteenth();
   m_previousMidiNote = nextMidiNote;
 
   if (!m_bIsMuted) {
-    if (nextMidiNote != 0) {
+    if (nextMidiNote != 0) { // TODO handle rests and ties better
       m_pMIDI->sendNoteOn(nextMidiNote, 100, m_midiChannel);
     }
   }
