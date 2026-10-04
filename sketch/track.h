@@ -13,6 +13,7 @@ class Track{
     Track();
     ~Track();
 
+    void setTrackNum(unsigned int trackNum);
     void setMIDI(ShareableMIDI *midi);
     void setMIDIChannel(unsigned int midiChannel);
 
@@ -28,6 +29,8 @@ class Track{
     void queueNextLoop();
 
   private:
+    unsigned int m_trackNum;
+  
     ShareableMIDI *m_pMIDI;
     unsigned char m_activeLoopNum;
     unsigned char m_midiChannel;

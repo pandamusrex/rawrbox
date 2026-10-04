@@ -8,18 +8,24 @@
 #define MAX_LOOPS_PER_TRACK 10
 
 Track::Track()  {
+  m_trackNum = 0;
   m_pMIDI = 0;
   m_midiChannel = 0;
   m_bIsMuted = false;
   m_activeLoopNum = 0;
   m_previousMidiNote = 0;
   m_nextLoopNum = 0;
+
   m_pLoops = new std::vector<Loop>;
   m_pLoops->reserve(MAX_LOOPS_PER_TRACK);
 }
 
 Track::~Track() {
   delete m_pLoops;
+}
+
+void Track::setTrackNum(unsigned int trackNum) {
+  m_trackNum = trackNum;
 }
 
 void Track::setMIDI(ShareableMIDI *midi) {
@@ -73,7 +79,6 @@ void Track::playNextSixteenth() {
     m_pMIDI->sendNoteOff(m_previousMidiNote, 100, m_midiChannel);
   }
 
-  // Serial.println(0+m_midiChannel);
   unsigned char nextMidiNote = m_pLoops->at(m_activeLoopNum).getNextSixteenth();
   m_previousMidiNote = nextMidiNote;
 

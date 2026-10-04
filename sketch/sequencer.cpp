@@ -7,7 +7,8 @@ Sequencer::Sequencer() : m_pTracks(0) {
   m_pMIDI->start_midi();
 
   m_pTracks = new Track[TRACK_COUNT]();
-  for (int i=0; i < TRACK_COUNT; i++) {
+  for (unsigned int i=0; i < TRACK_COUNT; i++) {
+    m_pTracks[i].setTrackNum(i);
     m_pTracks[i].setMIDI(m_pMIDI);
   }
 }

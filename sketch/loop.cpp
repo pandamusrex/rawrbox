@@ -3,14 +3,16 @@
 
 #include <string.h>
 
-Loop::Loop() : m_playbackHead(0) {
-  m_pMIDINotes = new std::vector<char>;
+#include "Arduino.h"
+
+Loop::Loop() {
+  m_playbackHead = 0;
+  m_loopLength = 0;
   strcpy(m_groupName, "");
   strcpy(m_name, "");
 }
 
 Loop::~Loop() {
-  delete m_pMIDINotes;
 }
 
 void Loop::setGroupName(const char *groupName) {
@@ -29,22 +31,23 @@ void Loop::addNotesFromString(const char *notes) {
   while (token != NULL) {
     unsigned char note = getMIDINote(token);
     if (note > 127) {
-      m_pMIDINotes->push_back(0); // TODO Handle legato @ and rest ~ differently
+      m_notes[m_loopLength] = 0; // TODO Handle legato @ and rest ~ differently
     } else {
-      m_pMIDINotes->push_back((char) note);
+      m_notes[m_loopLength] = note;
     }
+    m_loopLength++;
     token = strtok(NULL, " ");
   }
 }
 
-char Loop::getNextSixteenth() {
-  if (m_pMIDINotes->empty()) {
+unsigned char Loop::getNextSixteenth() {
+  if (m_loopLength == 0) {
     return 0;
   }
 
-  char midiNote = m_pMIDINotes->at(m_playbackHead);
+  unsigned char midiNote = m_notes[m_playbackHead];
   m_playbackHead++;
-  if (m_playbackHead >= m_pMIDINotes->size()) {
+  if (m_playbackHead >= m_loopLength) {
     m_playbackHead = 0;
   }
   return midiNote;
@@ -52,4 +55,13 @@ char Loop::getNextSixteenth() {
 
 bool Loop::isAtBeginningOfLoop() {
     return (m_playbackHead == 0);
+}
+
+void Loop::dump() {
+  Serial.println("Loop contains:");
+  for (unsigned int i=0; i < m_loopLength; i++) {
+    Serial.print(m_notes[i], DEC);
+    Serial.print(" ");
+  }
+  Serial.println();
 }
