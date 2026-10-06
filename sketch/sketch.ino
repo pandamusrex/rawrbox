@@ -66,12 +66,12 @@ void setup() {
   tft.println("2: 2"); // TODO READ FROM TRACK
   tft.drawRect(180, 85, 50, 70, ILI9341_WHITE);
 
-  tft.drawRect(180, 165, 50, 70, ILI9341_WHITE);
+  tft.drawRect(5, 165, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 170);
   tft.println("3: 3"); // TODO READ FROM TRACK
   tft.drawRect(180, 165, 50, 70, ILI9341_WHITE);
 
-  tft.drawRect(180, 245, 50, 70, ILI9341_WHITE);
+  tft.drawRect(5, 245, 50, 70, ILI9341_WHITE);
   tft.setCursor(60, 250);
   tft.println("4: 4"); // TODO READ FROM TRACK
   tft.drawRect(180, 245, 50, 70, ILI9341_WHITE);
