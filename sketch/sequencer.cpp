@@ -89,6 +89,14 @@ void Sequencer::addLoopToTrack(unsigned char trackNum,
   m_pTracks[trackNum].addLoop(groupName, name, notes);
 }
 
+void Sequencer::getLoopTitleForTrack(unsigned char trackNum, char *name, size_t max) {
+  if (trackNum >= TRACK_COUNT) {
+    return;
+  }
+
+  m_pTracks[trackNum].getActiveLoopTitle(name, max);
+}
+
 void Sequencer::playNextSixteenth() {
   for (unsigned char i = 0; i < TRACK_COUNT; i++) {
     m_pTracks[i].playNextSixteenth();
@@ -109,4 +117,12 @@ void Sequencer::queueNextLoopForTrack(unsigned char trackNum) {
   }
 
   m_pTracks[trackNum].queueNextLoop();
+}
+
+bool Sequencer::hasQueuedLoop(unsigned char trackNum) {
+  if (trackNum >= TRACK_COUNT) {
+    return;
+  }
+
+  return m_pTracks[trackNum].hasQueuedLoop();
 }

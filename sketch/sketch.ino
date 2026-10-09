@@ -40,48 +40,7 @@ Sequencer seq = Sequencer();
 unsigned int subBeat = 0;
 bool inTouch = false;
 
-void setup() {
-  // Debugging using VCP and built-in LED
-  Serial.begin(9600);
-  pinMode(LED_BUILTIN, OUTPUT); 
-
-  // Screen
-  tft.begin();
-  tft.setRotation(2);
-  tft.fillScreen(ILI9341_BLACK);
-
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(2);
-  
-  // TODO SHOW MUTE/UNMUTE
-  // TODO DISABLE PREV NEXT "BUTTONS" IF < 2 LOOPS ON A TRACK
-
-  tft.drawRect(5, 5, 50, 70, ILI9341_WHITE);
-  tft.setCursor(60, 10);
-  tft.println("1: 1"); // TODO READ FROM TRACK
-  tft.drawRect(180, 5, 50, 70, ILI9341_WHITE);
-
-  tft.drawRect(5, 85, 50, 70, ILI9341_WHITE);
-  tft.setCursor(60, 90);
-  tft.println("2: 2"); // TODO READ FROM TRACK
-  tft.drawRect(180, 85, 50, 70, ILI9341_WHITE);
-
-  tft.drawRect(5, 165, 50, 70, ILI9341_WHITE);
-  tft.setCursor(60, 170);
-  tft.println("3: 3"); // TODO READ FROM TRACK
-  tft.drawRect(180, 165, 50, 70, ILI9341_WHITE);
-
-  tft.drawRect(5, 245, 50, 70, ILI9341_WHITE);
-  tft.setCursor(60, 250);
-  tft.println("4: 4"); // TODO READ FROM TRACK
-  tft.drawRect(180, 245, 50, 70, ILI9341_WHITE);
-
-  // Touch
-  ts.begin();
-  ts.setRotation(2);
-  while (!Serial && (millis() <= 1000)); // Wait for USB VCP to come on line
-  // TODO will this be a problem when there is no host?
-
+void preloadSequencer() {
   // C0:24, C1:36, C2:48, C3:60, C4:72
   seq.setMIDIChannelForTrack(DRUM_TRACK_0, 1);
   seq.setMIDIChannelForTrack(BASS_SYNTH_TRACK_1, 2);
@@ -163,6 +122,92 @@ void setup() {
   );
 }
 
+#define MAX_TRACK_TITLE 32
+
+void updateUI() {  
+  // TODO SHOW MUTE/UNMUTE
+  // TODO DISABLE PREV NEXT "BUTTONS" IF < 2 LOOPS ON A TRACK
+
+  int loopCount = 0;
+  char trackTitle[MAX_TRACK_TITLE] = "NO TITLE";
+  bool isMuted = false;
+  bool hasQueuedLoop = false;
+
+  uint16_t trackTitleColor = ILI9341_CYAN;
+  uint16_t trackControlsColor = ILI9341_LIGHTGREY;
+
+  int16_t yOffset = 0;
+
+  uint16_t titleWidth = 0;
+  uint16_t titleHeight = 0;
+
+  int16_t xTitle = 0;
+  int16_t yTitle = 0;
+
+  for (int track = 0; track < 4; track++) {
+    yOffset = track * 64;
+
+    loopCount = seq.getNumLoopsForTrack(track);
+    seq.getLoopTitleForTrack(track, trackTitle, MAX_TRACK_TITLE - 1);
+    isMuted = seq.isTrackMuted(track);
+    hasQueuedLoop = seq.hasQueuedLoop(track);
+
+    if (loopCount == 0) {
+      trackTitleColor = ILI9341_DARKGREY;
+    } else if (isMuted) {
+      trackTitleColor = ILI9341_DARKCYAN;
+    } else {
+      trackTitleColor = hasQueuedLoop ? ILI9341_MAGENTA : ILI9341_CYAN;
+    }
+
+    trackControlsColor = (loopCount > 0) ? ILI9341_LIGHTGREY : ILI9341_DARKGREY;
+
+    // Left triangle
+    tft.fillTriangle(16, yOffset + 32,
+                     32, yOffset + 24,
+                     32, yOffset + 40,
+                     trackControlsColor);
+    // Title
+    tft.setTextSize(2);
+    titleWidth = tft.measureTextWidth(trackTitle);
+    titleHeight = tft.measureTextHeight(trackTitle);
+    xTitle = 120 - titleWidth / 2;
+    yTitle = yOffset + 32 - titleHeight / 2;
+    tft.setCursor(xTitle, yTitle);
+    tft.setTextColor(trackTitleColor);
+    tft.println(trackTitle);
+
+    // Right triangle
+    tft.fillTriangle(224, yOffset + 32,
+                     208, yOffset + 24,
+                     208, yOffset + 40,
+                     trackControlsColor);
+
+  }
+}
+
+void setup() {
+  // Debugging using VCP and built-in LED
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT); 
+
+  // Load tracks
+  preloadSequencer();
+
+  // Setup Screen
+  tft.begin();
+  tft.setRotation(2);
+  tft.fillScreen(ILI9341_BLACK);
+
+  // Setup Touch
+  ts.begin();
+  ts.setRotation(2);
+  while (!Serial && (millis() <= 1000)); // Wait for USB VCP to come on line
+
+  // Draw the UI for the first time
+  updateUI();
+}
+
 void loop() {
   seq.playNextSixteenth();
 
@@ -186,6 +231,7 @@ void loop() {
       inTouch = true;
 
       TS_Point p = ts.getPoint();
+      Serial.println(p.y);
       if (p.z > 1500) {
         unsigned char track;
 
@@ -202,6 +248,7 @@ void loop() {
           seq.toggleMuteForTrack(track);
         }
       }
+      updateUI(); // If we start showing loop position, we may need to move this out?
     }
   } else {
     inTouch = false;

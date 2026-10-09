@@ -25,8 +25,11 @@ class Sequencer{
         const char *name,
         const char *notes);
 
+    void getLoopTitleForTrack(unsigned char trackNum, char *name, size_t max);
+
     void queuePrevLoopForTrack(unsigned char trackNum);
     void queueNextLoopForTrack(unsigned char trackNum);
+    bool hasQueuedLoop(unsigned char trackNum);
 
     //void getCurrentTrackLoop(unsigned char trackNum,
     //  unsigned char loopNum,

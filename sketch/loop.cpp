@@ -23,6 +23,10 @@ void Loop::setName(const char *name) {
   strncpy(m_name, name, MAX_LOOP_NAME - 1);
 }
 
+void Loop::getName(char *name, size_t max) {
+  strncpy(name, m_name, max - 1);
+}
+
 void Loop::addNotesFromString(const char *notes) {
   char workingCopy[MAX_LOOP_NOTES_STRING + 1];
   strncpy(workingCopy, notes, MAX_LOOP_NOTES_STRING);

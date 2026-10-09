@@ -66,6 +66,14 @@ void Track::addLoop(const char *groupName, const char *name, const char *notes) 
   m_pLoops->push_back(loop);
 }
 
+void Track::getActiveLoopTitle(char *name, size_t max) {
+  if (m_pLoops->empty()) {
+    return;
+  }
+
+  m_pLoops->at(m_activeLoopNum).getName(name, max);
+}
+
 void Track::playNextSixteenth() {
   if (! m_pMIDI) {
     return;
@@ -118,4 +126,12 @@ void Track::queueNextLoop() {
   if (m_nextLoopNum > m_pLoops->size() - 1) {
     m_nextLoopNum = 0;
   }
+}
+
+bool Track::hasQueuedLoop() {
+  if (m_pLoops->size() <= 1) {
+    return false;
+  }
+
+  return (m_nextLoopNum != m_activeLoopNum);
 }

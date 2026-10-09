@@ -16,6 +16,7 @@ class Loop {
 
     void setGroupName(const char *groupName);
     void setName(const char *name);
+    void getName(char *name, size_t max);
     void addNotesFromString(const char *notes);
 
     unsigned char getNextSixteenth();

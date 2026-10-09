@@ -22,11 +22,13 @@ class Track{
     void unmute();
 
     void addLoop(const char *groupName, const char *name, const char *notes);
+    void getActiveLoopTitle(char *name, size_t max);
     void playNextSixteenth();
 
     unsigned char getNumLoops();
     void queuePrevLoop();
     void queueNextLoop();
+    bool hasQueuedLoop();
 
   private:
     unsigned int m_trackNum;
