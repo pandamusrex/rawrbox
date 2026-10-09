@@ -168,11 +168,15 @@ void updateUI() {
                      32, yOffset + 40,
                      trackControlsColor);
     // Title
+    // Text box runs from x:33 to x:223
+    tft.fillRect(33, yOffset, 223, yOffset+63, ILI9341_BLACK);
+
     tft.setTextSize(2);
     titleWidth = tft.measureTextWidth(trackTitle);
     titleHeight = tft.measureTextHeight(trackTitle);
     xTitle = 120 - titleWidth / 2;
     yTitle = yOffset + 32 - titleHeight / 2;
+
     tft.setCursor(xTitle, yTitle);
     tft.setTextColor(trackTitleColor);
     tft.println(trackTitle);
@@ -208,6 +212,56 @@ void setup() {
   updateUI();
 }
 
+void handleTouches() {
+  // In "rotation 2"
+  // X starts at ~3800 at the left of the screen, ~200 at the right
+  // Y starts at ~3800 at the top of the screen, ~200 at the bottom
+
+  // So...
+  // Track 0 Y between 3800 and 3040
+  // Track 1 Y between 3040 and 2280
+  // Track 2 Y between 2280 and 1520
+  // Track 3 Y between 1520 and 760
+
+  // And...
+  // X < 760 = right arrow
+  // X > 3040 = left arrow
+  // X
+
+  if (ts.touched()) { // if screen is being touched
+    if (!inTouch) { // if we haven't already processed this touch
+      inTouch = true;
+
+      TS_Point p = ts.getPoint();
+      if (p.z > 500) { // require a bit of pressure to avoid accidents
+        unsigned char track;
+
+        if (p.y > 3800) {
+          track = 0;
+        } else {
+          track = ((3800 - p.y) / 760);
+        }
+        if (track > 3) {
+          track = 3;
+        }
+
+
+        if (p.x > 3040) { // LEFT OF TRACK == QUEUE PREVIOUS LOOP
+          seq.queuePrevLoopForTrack(track);
+        } else if (p.x < 760) { // RIGHT OF TRACK == QUEUE NEXT LOOP
+          seq.queueNextLoopForTrack(track);
+        } else { // CENTER OF TRACK == TOGGLE MUTE
+          seq.toggleMuteForTrack(track);
+        }
+      }
+      updateUI(); // If we start showing loop position, we may need to move this out?
+    }
+  } else {
+    inTouch = false;
+  }
+
+}
+
 void loop() {
   seq.playNextSixteenth();
 
@@ -226,33 +280,7 @@ void loop() {
   }
 
   // Handle touches
-  if (ts.touched()) { // if screen is being touched
-    if (!inTouch) { // if we haven't already processed this touch
-      inTouch = true;
-
-      TS_Point p = ts.getPoint();
-      Serial.println(p.y);
-      if (p.z > 1500) {
-        unsigned char track;
-
-        track = p.y / 800;
-        if (track > 3) {
-          track = 3;
-        } // TODO TRACK_COUNT
-
-        if (p.x < 1000) { // LEFT OF TRACK == QUEUE PREVIOUS LOOP
-          seq.queuePrevLoopForTrack(track);
-        } else if (p.x > 2000) { // RIGHT OF TRACK == QUEUE NEXT LOOP
-          seq.queueNextLoopForTrack(track);
-        } else { // CENTER OF TRACK == TOGGLE MUTE
-          seq.toggleMuteForTrack(track);
-        }
-      }
-      updateUI(); // If we start showing loop position, we may need to move this out?
-    }
-  } else {
-    inTouch = false;
-  }
+  handleTouches();
 
   // TODO tempo management
   delay(110);
